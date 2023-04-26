@@ -43,6 +43,10 @@ export class HolidayService {
 
   deleteEvent(id: number) : any
   {
+    this.options.method = "DELETE";
+    this.options.body = {
+      id: id
+    };
     return this.http.delete(this.resourceUrl+"/"+id, this.options);
   }
 }

@@ -125,7 +125,6 @@ export class HolidayPickerComponent {
   }
 
   loadEvents() : void {
-    // DB access
     this.holidayService.listEvents().subscribe((res: any) => {
       res.value.forEach((ev: any) => {
         if(this.accessTokenDetails.power == this.adminRole) {
@@ -144,20 +143,9 @@ export class HolidayPickerComponent {
           } else this.addChosenEvent(ev.date, ev.id, ev.user_id, ev.user.name)
         }
       })
+      this.refresh.next();
       console.log("Holidays:", res);
     })
-
-/*
-    this.addChosenEvent('2023-04-27 00:00:00', 2, 2, 'Javi')
-    this.addPendingEvent('2023-04-28 00:00:00', 3, 2, 'Javi')
-    this.addPendingEvent('2023-04-29 00:00:00', 4, 2, 'Javi')
-    this.addChosenEvent('2023-04-30 00:00:00', 5, 2, 'Javi')
-    this.addChosenEvent('2023-05-01 00:00:00', 6, 2, 'Javi')
-    this.addChosenEvent('2023-05-02 00:00:00', 7, 2, 'Javi')
-    this.addValidatedEvent('2023-05-03 00:00:00', 8, 1, 'Manel')
-    this.addValidatedEvent('2023-05-04 00:00:00', 9, 1, 'Manel')
-    this.addValidatedEvent('2023-05-05 00:00:00', 10, 1, 'Manel')
-    this.addValidatedEvent('2023-05-06 00:00:00', 11, 1, 'Manel')*/
   }
 
   async dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }) {
@@ -169,15 +157,15 @@ export class HolidayPickerComponent {
       if(this.checkPast(date.toString())) {
         if(this.checkWeeks(date.toString())) {
           if(this.accessTokenDetails.power == this.adminRole) {
-            if (!event) this.addValidatedEvent(date.toString(), this.events.length, this.accessTokenDetails.id, this.accessTokenDetails.name)
+            if (!event) this.addMyPendingEvent(date.toString())
             else {
               if(event.meta.type == 'pending') {
                 const {value: userConfirms, dismiss} = await this.swalService.validateHoliday(event.meta.name, date.toString());
                 if(userConfirms) this.validateEvent(event);
-                else if(dismiss) this.discardEvent(event);
+                else if(dismiss) this.deleteEvent(event);
                 this.refresh.next();
               }else{
-                const {value: userConfirms, dismiss} = await this.swalService.showUserConfirmDelete();
+                const {value: userConfirms, dismiss} = await this.swalService.showUserConfirmDelete(event.meta.name, date.toString(), false);
                 if(userConfirms) this.deleteEvent(event)
                 this.refresh.next();
               }
@@ -188,7 +176,7 @@ export class HolidayPickerComponent {
               if(event.meta.type == 'pending')
                 this.deleteEvent(event)
               else {
-                const {value: userConfirms, dismiss} = await this.swalService.showUserConfirmDelete();
+                const {value: userConfirms, dismiss} = await this.swalService.showUserConfirmDelete(event.meta.name, date.toString(), true);
                 if(userConfirms) this.deleteEvent(event)
                 this.refresh.next();
               }
@@ -260,7 +248,8 @@ export class HolidayPickerComponent {
   }
 
   addPendingEvent(date: string, id: number, user: number, name: string): void {
-    if(user == this.accessTokenDetails.id || this.accessTokenDetails.power == this.adminRole)
+    if(user == this.accessTokenDetails.id || this.accessTokenDetails.power == this.adminRole) {
+      this.countDays += 1;
       this.events = [
         ...this.events,
         {
@@ -281,7 +270,7 @@ export class HolidayPickerComponent {
           },
         },
       ];
-      else this.addChosenEvent(date, id, user, name);
+      } else this.addChosenEvent(date, id, user, name);
       this.refresh.next();
   }
 
@@ -289,33 +278,62 @@ export class HolidayPickerComponent {
     if(this.maxDays-this.countDays > 0) {
       this.countDays += 1;
       // DB access
-     this.holidayService.createEvent(date, this.accessTokenDetails.id, this.accessTokenDetails.power).subscribe((res: any) => {
-      if(res.status == 200)
-      {
-        this.events = [
-        ...this.events,
-        {
-          title: 'Holiday for '+this.accessTokenDetails.name,
-          start: startOfDay(new Date(date)),
-          end: endOfDay(new Date(date)),
-          color: colors['pending'],
-          meta: {
-            user: this.accessTokenDetails.id,
-            type: 'pending'
-          },
-          draggable: true,
-          resizable: {
-            beforeStart: true,
-            afterEnd: true,
-          },
-        },
-      ];
-    } else console.log(res)
-    this.refresh.next();
-     });
-
-
-
+      if(this.accessTokenDetails.power == this.adminRole) {
+        this.holidayService.createEvent(date, this.accessTokenDetails.id, this.accessTokenDetails.power).subscribe((res: any) => {
+          console.log(res)
+          if(res.status == 200)
+          {
+            this.events = [
+            ...this.events,
+            {
+              title: 'Validated holiday for '+this.accessTokenDetails.name,
+              start: startOfDay(new Date(date)),
+              end: endOfDay(new Date(date)),
+              color: colors['validated'],
+              meta: {
+                id: res.value.id,
+                user: this.accessTokenDetails.id,
+                type: 'validated',
+                name:  this.accessTokenDetails.name
+              },
+              draggable: true,
+              resizable: {
+                beforeStart: true,
+                afterEnd: true,
+              },
+            },
+          ];
+        } else console.log(res)
+        this.refresh.next();
+         });
+      }else{
+        this.holidayService.createEvent(date, this.accessTokenDetails.id, this.accessTokenDetails.power).subscribe((res: any) => {
+          if(res.status == 200)
+          {
+            this.events = [
+            ...this.events,
+            {
+              title: 'Holiday for '+this.accessTokenDetails.name,
+              start: startOfDay(new Date(date)),
+              end: endOfDay(new Date(date)),
+              color: colors['pending'],
+              meta: {
+                user: this.accessTokenDetails.id,
+                id: res.value.id,
+                name: this.accessTokenDetails.name,
+                type: 'pending'
+              },
+              draggable: true,
+              resizable: {
+                beforeStart: true,
+                afterEnd: true,
+              },
+            },
+          ];
+        } else console.log(res)
+        this.refresh.next();
+         });
+      }
     } else this.swalService.holidayDaysCountReached();
 
   }
@@ -323,25 +341,27 @@ export class HolidayPickerComponent {
   addValidatedEvent(date: string, id: number, user: number, name: string): void {
     if(this.maxDays-this.countDays > 0) {
       this.countDays += 1;
-      this.events = [
-      ...this.events,
-      {
-        title: 'Validated holiday for '+name,
-        start: startOfDay(new Date(date)),
-        end: endOfDay(new Date(date)),
-        color: colors['validated'] ,
-        meta: {
-          id: id,
-          user: user,
-          type: 'validated'
-        },
-        draggable: false,
-        resizable: {
-          beforeStart: true,
-          afterEnd: true,
-        },
-      },
-    ];
+        this.events = [
+          ...this.events,
+          {
+            title: 'Validated holiday for '+name,
+            start: startOfDay(new Date(date)),
+            end: endOfDay(new Date(date)),
+            color: colors['validated'] ,
+            meta: {
+              id: id,
+              user: user,
+              type: 'validated',
+              name: name
+            },
+            draggable: false,
+            resizable: {
+              beforeStart: true,
+              afterEnd: true,
+            },
+          },
+        ];
+
   } else this.swalService.holidayDaysCountReached();
 }
 

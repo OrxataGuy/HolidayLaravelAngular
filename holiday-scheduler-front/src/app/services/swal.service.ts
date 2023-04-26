@@ -6,10 +6,18 @@ import Swal from 'sweetalert2'
 })
 export class SwalService {
   constructor() { }
-  public showUserConfirmDelete() : Promise<any> {
+  public showUserConfirmDelete(user: string, date: string, me: boolean) : Promise<any> {
+    if (me)
     return Swal.fire({
       title: 'Hey, wait!',
-      text: 'Are you sure that you want to cancel this validated holiday?',
+      text: `Are you sure that you want to cancel your validated holiday on ${date}?`,
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'Nope',
+      showCancelButton: true,
+    })
+    return Swal.fire({
+      title: 'Hey, wait!',
+      text: `Are you sure that you want to cancel this validated holiday for ${user} on ${date}?`,
       confirmButtonText: 'Yes',
       cancelButtonText: 'Nope',
       showCancelButton: true,

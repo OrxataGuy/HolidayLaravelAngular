@@ -64,7 +64,7 @@ class HolidayController extends Controller
     public function destroy($id)
     {
         $holiday = Holiday::find($id);
-        $holiday->destroy();
+        $holiday->delete();
         return response()->json(array(
             'status' => 200,
             'value' => 'The holiday was deleted successfully'

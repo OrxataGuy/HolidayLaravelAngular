@@ -39,20 +39,14 @@
   </div>
   <div class="col-md-4">
     <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
-    <h5>Pending holidays: {{ this.maxDays - this.countDays }}</h5>
+
+    <div class="alert alert-{{ (this.maxDays - this.countDays>11) ? 'info' : ((this.maxDays - this.countDays>5) ? 'warning' : 'danger') }}">
+      Pending holidays for {{ this.accessTokenDetails.name }}: {{ this.maxDays - this.countDays }}
+    </div>
   </div>
 
-  <ng-template #customCellTemplate let-day="day" let-locale="locale">
-    <div class="cal-cell-top">
-      <span class="cal-day-badge" *ngIf="day.badgeTotal > 0">A</span>
-      <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
-    </div>
-  </ng-template>
 
-  <!-- div class="alert alert-info">
-    You can use each views beforeViewRender output to add a custom cssClass to
-    different cells to add styling for disabled time slots
-  </div -->
+
 
   <!-- div class="col-md-4">
     <div class="btn-group">
