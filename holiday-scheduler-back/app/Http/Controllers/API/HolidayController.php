@@ -55,6 +55,7 @@ class HolidayController extends Controller
         }else{
             $holiday->delete();
         }
+
         return response()->json(array(
             'status' => 200,
             'value' => 'The holiday was updated successfully'

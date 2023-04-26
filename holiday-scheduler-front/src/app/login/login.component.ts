@@ -41,6 +41,7 @@ export class LoginComponent implements OnInit {
      this.errors = false;
      this.authService.login(this.controls['email'].value, this.controls['password'].value)
        .subscribe((res: any) => {
+        console.log(res);
          // Store the access token in the localstorage
          localStorage.setItem('access_token', res.access_token);
          this.loading = false;

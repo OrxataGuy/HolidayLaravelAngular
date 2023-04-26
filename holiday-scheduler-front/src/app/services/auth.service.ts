@@ -25,7 +25,7 @@ export class AuthService {
    return this.http.post(this.authUrl, {
      grant_type: 'password',
      client_id: '2',
-     client_secret: 'oShzfce0h2klRrNF7qAgo1wFlW692TU3USdfQ6iI',
+     client_secret: 'PASSPORT_CLIENT_2',
      username: e,
      password: p,
      scope: ''
